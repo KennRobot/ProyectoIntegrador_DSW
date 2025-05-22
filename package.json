@@ -1,0 +1,17 @@
+{
+  "name": "proyectointegrador_dsw",
+  "version": "1.0.0",
+  "description": "Repositorio del proyecto integrador de Desarrollo de Servicios Web. Desarrollo y implementacion de una Api GFraphQL integrada con FacturaAPI y servicios de Notificaciojn",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "apollo-server": "^3.13.0",
+    "express": "^4.21.2",
+    "mongoose": "^8.15.0"
+  }
+}
