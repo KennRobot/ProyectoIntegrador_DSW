@@ -48,11 +48,29 @@ const resolvers = {
         // Crear cliente en Facturapi
         const { data: facturapiClient } = await facturapi.post('/customers', input);
 
-        // Guardar en MongoDB
-        const newClient = new Client(facturapiClient);
-        await newClient.save();
+        // 2. Crear en MongoDB
+        const nuevoCliente = new Client({
+          id: facturapiClient.id,
+          legal_name: facturapiClient.legal_name,
+          tax_id: facturapiClient.tax_id,
+          email: facturapiClient.email,
+          phone: facturapiClient.phone,
+          address: {
+            street: facturapiClient.address.street,
+            exterior: facturapiClient.address.exterior,
+            interior: facturapiClient.address.interior,
+            neighborhood: facturapiClient.address.neighborhood,
+            zip: facturapiClient.address.zip,
+            city: facturapiClient.address.city,
+            municipality: facturapiClient.address.municipality,
+            state: facturapiClient.address.state,
+            country: facturapiClient.address.country,
+          }
+        });
 
-        return newClient;
+        await nuevoCliente.save(); // ✅ Esto guarda en MongoDB
+
+        return nuevoCliente;
       } catch (error) {
         console.error('❌ Facturapi error:', error.response?.data || error.message);
         throw new Error(

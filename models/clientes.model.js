@@ -1,4 +1,3 @@
-// models/Client.js
 const mongoose = require('mongoose');
 
 const clientSchema = new mongoose.Schema({
@@ -18,6 +17,9 @@ const clientSchema = new mongoose.Schema({
     state: String,
     country: String,
   },
+}, {
+  collection: 'Clientes' // Aquí especificas correctamente la colección
 });
 
+// ✅ Usa nombre singular en el modelo
 module.exports = mongoose.model('Client', clientSchema);

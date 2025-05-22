@@ -1,19 +1,16 @@
 // server.js
 require('dotenv').config();
 const express = require('express');
-const mongoose = require('mongoose');
 const { ApolloServer } = require('apollo-server-express');
 const typeDefs = require('./schemas/TypeDefs');
 const resolvers = require('./controllers/clientes.controllers');
+const connectDB = require('./config/conection');
 
 const startServer = async () => {
   const app = express();
 
   // Conexión a MongoDB
-  await mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
+  connectDB();
 
   // Servidor Apollo
   const server = new ApolloServer({ typeDefs, resolvers });
