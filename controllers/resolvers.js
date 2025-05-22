@@ -5,7 +5,7 @@ const {
   crearCliente,
   crearProducto,
   emitirFactura,
-} = require("../services/facturapi");
+} = require("../servicios/facturapi");
 
 module.exports = {
   Query: {

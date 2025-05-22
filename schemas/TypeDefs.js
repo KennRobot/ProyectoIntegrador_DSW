@@ -1,6 +1,6 @@
 const { gql } = require("apollo-server-express");
 
-module.exports = gql`
+const TypeDefs = gql`
   type Cliente {
     id: ID!
     name: String
@@ -55,3 +55,5 @@ module.exports = gql`
     emitirFactura(input: FacturaInput!): Factura
   }
 `;
+
+module.exports = TypeDefs;
