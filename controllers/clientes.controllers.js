@@ -31,6 +31,7 @@ const resolvers = {
         }
 
         return savedClients;
+        
       } catch (error) {
         console.error('Error syncing clients:', error.message);
         throw new Error('Failed to sync clients from Facturapi');
