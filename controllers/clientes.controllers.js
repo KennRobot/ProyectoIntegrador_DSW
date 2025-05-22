@@ -1,4 +1,3 @@
-// resolvers/clientResolvers.js
 const axios = require('axios');
 const Client = require('../models/clientes.model');
 
@@ -12,7 +11,6 @@ const facturapi = axios.create({
 
 const resolvers = {
   Query: {
-    // Trae clientes desde Facturapi y los guarda en MongoDB
     syncClientsFromFacturapi: async () => {
       try {
         const { data } = await facturapi.get('/customers');
@@ -39,9 +37,29 @@ const resolvers = {
       }
     },
 
-    // Retorna todos los clientes guardados en MongoDB
     getAllClients: async () => {
       return await Client.find();
+    },
+  },
+
+  Mutation: {
+    createClient: async (_, { input }) => {
+      try {
+        // Crear cliente en Facturapi
+        const { data: facturapiClient } = await facturapi.post('/customers', input);
+
+        // Guardar en MongoDB
+        const newClient = new Client(facturapiClient);
+        await newClient.save();
+
+        return newClient;
+      } catch (error) {
+        console.error('❌ Facturapi error:', error.response?.data || error.message);
+        throw new Error(
+            error.response?.data?.message || 'Failed to create client'
+        );
+    }
+
     },
   },
 };
