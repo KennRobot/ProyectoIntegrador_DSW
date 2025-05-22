@@ -1,21 +1,29 @@
-require("dotenv").config();
-const express = require("express");
-const { ApolloServer } = require("apollo-server-express");
-const connectDB = require("./config/conection");
-const typeDefs = require("./schemas/TypeDefs");
-const resolvers = require("./controllers/resolvers");
+// server.js
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const { ApolloServer } = require('apollo-server-express');
+const typeDefs = require('./schemas/TypeDefs');
+const resolvers = require('./controllers/clientes.controllers');
 
-const start = async () => {
-  await connectDB();
-
+const startServer = async () => {
   const app = express();
+
+  // Conexión a MongoDB
+  await mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
+
+  // Servidor Apollo
   const server = new ApolloServer({ typeDefs, resolvers });
   await server.start();
   server.applyMiddleware({ app });
 
-  app.listen({ port: 4000 }, () =>
-    console.log(`🚀 Server on http://localhost:4000${server.graphqlPath}`)
+  const PORT = process.env.PORT || 4000;
+  app.listen(PORT, () =>
+    console.log(`🚀 Server ready at http://localhost:${PORT}${server.graphqlPath}`)
   );
 };
 
-start();
+startServer();

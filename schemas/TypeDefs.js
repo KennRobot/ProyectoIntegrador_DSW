@@ -1,59 +1,32 @@
-const { gql } = require("apollo-server-express");
+// schemas/clientSchema.js
+const { gql } = require('apollo-server-express');
 
-const TypeDefs = gql`
-  type Cliente {
-    id: ID!
-    name: String
+const typeDefs = gql`
+  type Address {
+    street: String
+    exterior: String
+    interior: String
+    neighborhood: String
+    zip: String
+    city: String
+    municipality: String
+    state: String
+    country: String
+  }
+
+  type Client {
+    id: ID
+    legal_name: String
+    tax_id: String
     email: String
-    rfc: String
-    facturapi_id: String
-  }
-
-  type Producto {
-    id: ID!
-    description: String
-    product_key: String
-    price: Float
-    facturapi_id: String
-  }
-
-  type Factura {
-    id: ID!
-    uuid: String
-    customer: Cliente
-    items: [Producto]
-    total: Float
-    created_at: String
-  }
-
-  input ClienteInput {
-    name: String!
-    email: String!
-    rfc: String!
-  }
-
-  input ProductoInput {
-    description: String!
-    product_key: String!
-    price: Float!
-  }
-
-  input FacturaInput {
-    clienteId: ID!
-    productoIds: [ID!]!
+    phone: String
+    address: Address
   }
 
   type Query {
-    obtenerClientes: [Cliente]
-    obtenerProductos: [Producto]
-    obtenerFacturas: [Factura]
-  }
-
-  type Mutation {
-    crearCliente(input: ClienteInput!): Cliente
-    crearProducto(input: ProductoInput!): Producto
-    emitirFactura(input: FacturaInput!): Factura
+    syncClientsFromFacturapi: [Client]
+    getAllClients: [Client]
   }
 `;
 
-module.exports = TypeDefs;
+module.exports = typeDefs;
