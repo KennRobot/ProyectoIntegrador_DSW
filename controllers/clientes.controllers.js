@@ -22,7 +22,25 @@ const resolvers = {
           const existing = await Client.findOne({ id: customer.id });
 
           if (!existing) {
-            const newClient = new Client(customer);
+            const newClient = new Client({
+            id: customer.id,
+            legal_name: customer.legal_name,
+            tax_id: customer.tax_id,
+            email: customer.email,
+            phone: customer.phone,
+            address: {
+              street: customer.address?.street,
+              exterior: customer.address?.exterior,
+              interior: customer.address?.interior,
+              neighborhood: customer.address?.neighborhood,
+              zip: customer.address?.zip,
+              city: customer.address?.city,
+              municipality: customer.address?.municipality,
+              state: customer.address?.state,
+              country: customer.address?.country,
+            }
+          });
+
             await newClient.save();
             savedClients.push(newClient);
           } else {
@@ -56,7 +74,7 @@ const resolvers = {
           tax_id: facturapiClient.tax_id,
           email: facturapiClient.email,
           phone: facturapiClient.phone,
-          address: {
+            address: {
             street: facturapiClient.address.street,
             exterior: facturapiClient.address.exterior,
             interior: facturapiClient.address.interior,
