@@ -42,13 +42,49 @@ const typeDefs = gql`
     address: AddressInput
   }
 
+  input ProductInput {
+  description: String!
+  product_key: String!
+  price: Float!
+  tax_included: Boolean
+  taxes: [TaxInput]
+  unit_key: String!
+  sku: String
+  }
+
+  input TaxInput {
+    type: String!
+    rate: Float
+  }
+
+  type Product {
+    id: ID
+    description: String
+    product_key: String
+    price: Float
+    tax_included: Boolean
+    taxes: [Tax]
+    unit_key: String
+    sku: String
+  }
+
+  type Tax {
+    type: String
+    rate: Float
+  }
+
+
   type Query {
     syncClientsFromFacturapi: [Client]
     getAllClients: [Client]
+
+    syncProductsFromFacturapi: [Product]
+    getAllProducts: [Product]
   }
 
   type Mutation {
     createClient(input: ClientInput!): Client
+    createProduct(input: ProductInput!): Product
   }
 `;
 
