@@ -1,4 +1,7 @@
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+const PDFDocument = require('pdfkit');
 const Client = require('../models/clientes.model');
 const Product = require('../models/products.model');
 const Invoice = require('../models/factura.model');
@@ -12,6 +15,48 @@ const facturapi = axios.create({
   },
 });
 
+async function generateInvoicePdf(invoiceData, outputPath) {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ margin: 30 });
+    const stream = fs.createWriteStream(outputPath);
+
+    doc.pipe(stream);
+
+    // Cabecera
+    doc.fontSize(18).text('Factura', { align: 'center' });
+    doc.moveDown();
+
+    // Cliente
+    doc.fontSize(12).text(`Cliente: ${invoiceData.customer.legal_name || 'N/A'}`);
+    doc.text(`RFC: ${invoiceData.customer.tax_id || 'N/A'}`);
+    doc.text(`Email: ${invoiceData.customer.email || 'N/A'}`);
+    doc.moveDown();
+
+    // Items
+    doc.text('Productos:');
+    invoiceData.items.forEach((item, i) => {
+      const description = item.product?.description || 'Sin descripción';
+      const quantity = item.quantity ?? 0;
+      const unitPrice = Number(item.unit_price ?? 0);
+
+      doc.text(
+        `${i + 1}. ${description} - Cantidad: ${quantity} - Precio Unitario: $${unitPrice.toFixed(2)}`
+      );
+    });
+
+    doc.moveDown();
+
+    // Total
+    const total = invoiceData.total ?? 0;
+    doc.fontSize(14).text(`Total: $${total.toFixed(2)}`, { align: 'right' });
+
+    doc.end();
+
+    stream.on('finish', resolve);
+    stream.on('error', reject);
+  });
+}
+
 const resolvers = {
   Query: {
     // CLIENTES
@@ -19,8 +64,6 @@ const resolvers = {
       try {
         const { data } = await facturapi.get('/customers');
         const customers = data.data;
-
-        //console.log(`Clientes obtenidos de Facturapi: ${customers.length}`);
         const savedClients = [];
 
         for (const customer of customers) {
@@ -44,14 +87,12 @@ const resolvers = {
                 country: customer.address?.country,
               },
             },
-            { new: true, upsert: true } // si no existe, crea; si existe, actualiza y devuelve el nuevo documento
+            { new: true, upsert: true }
           );
 
-          //console.log(`Guardado cliente: ${updatedClient.legal_name}`);
           savedClients.push(updatedClient);
         }
 
-        //console.log(`Clientes sincronizados y guardados: ${savedClients.length}`);
         return savedClients;
       } catch (error) {
         console.error('Error syncing clients:', error.message);
@@ -68,7 +109,6 @@ const resolvers = {
       try {
         const { data } = await facturapi.get('/products');
         const products = data.data;
-
         const savedProducts = [];
 
         for (const product of products) {
@@ -158,97 +198,102 @@ const resolvers = {
         throw new Error(error.response?.data?.message || 'Failed to create product');
       }
     },
-    //FACTURAS
+
+    // FACTURAS
     createInvoice: async (_, { input }) => {
-  try {
-    // Buscar productos completos para cada item
-    const itemsComplete = await Promise.all(
-      input.items.map(async (item) => {
-        const product = await Product.findOne({ id: item.product });
-        if (!product) throw new Error(`Producto con id ${item.product} no encontrado`);
+      try {
+        const itemsComplete = await Promise.all(
+          input.items.map(async (item) => {
+            const product = await Product.findOne({ id: item.product });
+            if (!product) throw new Error(`Producto con id ${item.product} no encontrado`);
+
+            return {
+              quantity: item.quantity,
+              product: {
+                description: product.description,
+                product_key: product.product_key,
+                price: product.price,
+                tax_included: product.tax_included,
+                taxes: product.taxes,
+                unit_key: product.unit_key,
+                sku: product.sku,
+              },
+            };
+          })
+        );
+
+        const { data: invoiceCreated } = await facturapi.post('/invoices', {
+          customer: input.customer,
+          items: itemsComplete,
+          payment_form: input.payment_form,
+          payment_method: input.payment_method,
+          use: input.use,
+        });
+
+        const mongoInvoice = new Invoice({
+          facturapi_id: invoiceCreated.id,
+          customer: invoiceCreated.customer,
+          items: invoiceCreated.items.map(item => {
+            let taxes = item.product.taxes;
+
+            if (typeof taxes === 'string') {
+              try {
+                taxes = JSON.parse(taxes);
+              } catch (e) {
+                console.warn('No se pudo parsear taxes, se asigna arreglo vacío', e);
+                taxes = [];
+              }
+            }
+
+            taxes = Array.isArray(taxes)
+              ? taxes.map(t => typeof t === 'string' ? t : JSON.stringify(t))
+              : [];
+
+            return {
+              product: {
+                ...item.product,
+                taxes
+              },
+              quantity: item.quantity,
+              description: item.description,
+              unit_price: item.unit_price
+            };
+          }),
+          total: invoiceCreated.total,
+          payment_form: invoiceCreated.payment_form,
+          payment_method: invoiceCreated.payment_method,
+          use: invoiceCreated.use,
+          status: invoiceCreated.status,
+          pdf_url: invoiceCreated.pdf_url,
+          xml_url: invoiceCreated.xml_url
+        });
+
+        await mongoInvoice.save();
+
+        const invoicesDir = path.join(__dirname, '../facturas');
+        if (!fs.existsSync(invoicesDir)) {
+          fs.mkdirSync(invoicesDir);
+        }
+
+        const pdfPath = path.join(invoicesDir, `${invoiceCreated.id}.pdf`);
+
+        await generateInvoicePdf(invoiceCreated, pdfPath);
+
+        console.log(`PDF generado en ${pdfPath}`);
 
         return {
-          quantity: item.quantity,
-          product: {
-            description: product.description,
-            product_key: product.product_key,
-            price: product.price,
-            tax_included: product.tax_included,
-            taxes: product.taxes,
-            unit_key: product.unit_key,
-            sku: product.sku
-          }
+          id: invoiceCreated.id,
+          status: invoiceCreated.status,
+          pdf_url: `local_path/${invoiceCreated.id}.pdf`,
+          xml_url: invoiceCreated.xml_url
         };
-      })
-    );
 
-    const { data: invoice } = await facturapi.post('/invoices', {
-      customer: input.customer,
-      items: itemsComplete,
-      payment_form: input.payment_form,
-      payment_method: input.payment_method,
-      use: input.use
-    });
-
-    // Guardar en MongoDB con datos que regresa Facturapi
-  const mongoInvoice = new Invoice({
-    facturapi_id: invoice.id,
-    customer: invoice.customer,
-    items: invoice.items.map(item => {
-      let taxes = item.product.taxes;
-
-      if (typeof taxes === 'string') {
-        try {
-          taxes = JSON.parse(taxes);
-        } catch (e) {
-          console.warn('No se pudo parsear taxes, se asigna arreglo vacío', e);
-          taxes = [];
-        }
+      } catch (error) {
+        console.error("❌ Error creando factura:", error.response?.data || error.message || error);
+        throw new Error(error.response?.data?.message || error.message || "No se pudo crear la factura");
       }
-
-      // Normalizar impuestos como strings
-      taxes = Array.isArray(taxes)
-        ? taxes.map(t => typeof t === 'string' ? t : JSON.stringify(t))
-        : [];
-
-      return {
-        product: {
-          ...item.product,
-          taxes
-        },
-        quantity: item.quantity,
-        description: item.description,
-        unit_price: item.unit_price
-      };
-    }),
-    total: invoice.total,
-    payment_form: invoice.payment_form,
-    payment_method: invoice.payment_method,
-    use: invoice.use,
-    status: invoice.status,
-    pdf_url: invoice.pdf_url,
-    xml_url: invoice.xml_url
-  });
-
-
-    await mongoInvoice.save();
-
-    return {
-      id: invoice.id,
-      status: invoice.status,
-      pdf_url: invoice.pdf_url,
-      xml_url: invoice.xml_url
-    };
-
-  } catch (error) {
-    console.error("❌ Error creando factura:", error.response?.data || error.message || error);
-    throw new Error(error.response?.data?.message || error.message || "No se pudo crear la factura");
-  }
-}
-
+    },
   },
 };
 
 module.exports = resolvers;
-
-
