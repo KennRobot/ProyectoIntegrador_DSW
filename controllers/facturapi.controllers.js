@@ -19,7 +19,7 @@ const resolvers = {
         const { data } = await facturapi.get('/customers');
         const customers = data.data;
 
-        console.log(`Clientes obtenidos de Facturapi: ${customers.length}`);
+        //console.log(`Clientes obtenidos de Facturapi: ${customers.length}`);
         const savedClients = [];
 
         for (const customer of customers) {
@@ -46,11 +46,11 @@ const resolvers = {
             { new: true, upsert: true } // si no existe, crea; si existe, actualiza y devuelve el nuevo documento
           );
 
-          console.log(`Guardado cliente: ${updatedClient.legal_name}`);
+          //console.log(`Guardado cliente: ${updatedClient.legal_name}`);
           savedClients.push(updatedClient);
         }
-        
-        console.log(`Clientes sincronizados y guardados: ${savedClients.length}`);
+
+        //console.log(`Clientes sincronizados y guardados: ${savedClients.length}`);
         return savedClients;
       } catch (error) {
         console.error('Error syncing clients:', error.message);
