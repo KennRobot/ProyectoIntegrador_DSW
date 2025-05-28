@@ -9,6 +9,8 @@ const productSchema = new mongoose.Schema({
   taxes: Array,
   unit_key: String,
   sku: String,
+}, {
+  collection: 'Productos' // Aquí especificas correctamente la colección
 });
 
-module.exports = mongoose.model('Product', productSchema);
+module.exports = mongoose.model('Productos', productSchema);

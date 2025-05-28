@@ -19,13 +19,13 @@ const resolvers = {
         const { data } = await facturapi.get('/customers');
         const customers = data.data;
 
+        console.log(`Clientes obtenidos de Facturapi: ${customers.length}`);
         const savedClients = [];
 
         for (const customer of customers) {
-          const existing = await Client.findOne({ id: customer.id });
-
-          if (!existing) {
-            const newClient = new Client({
+          const updatedClient = await Client.findOneAndUpdate(
+            { id: customer.id },
+            {
               id: customer.id,
               legal_name: customer.legal_name,
               tax_id: customer.tax_id,
@@ -42,15 +42,15 @@ const resolvers = {
                 state: customer.address?.state,
                 country: customer.address?.country,
               },
-            });
+            },
+            { new: true, upsert: true } // si no existe, crea; si existe, actualiza y devuelve el nuevo documento
+          );
 
-            await newClient.save();
-            savedClients.push(newClient);
-          } else {
-            savedClients.push(existing);
-          }
+          console.log(`Guardado cliente: ${updatedClient.legal_name}`);
+          savedClients.push(updatedClient);
         }
-
+        
+        console.log(`Clientes sincronizados y guardados: ${savedClients.length}`);
         return savedClients;
       } catch (error) {
         console.error('Error syncing clients:', error.message);
@@ -71,10 +71,9 @@ const resolvers = {
         const savedProducts = [];
 
         for (const product of products) {
-          const existing = await Product.findOne({ id: product.id });
-
-          if (!existing) {
-            const newProduct = new Product({
+          const updatedProduct = await Product.findOneAndUpdate(
+            { id: product.id },
+            {
               id: product.id,
               description: product.description,
               product_key: product.product_key,
@@ -83,13 +82,11 @@ const resolvers = {
               taxes: product.taxes,
               unit_key: product.unit_key,
               sku: product.sku,
-            });
+            },
+            { new: true, upsert: true }
+          );
 
-            await newProduct.save();
-            savedProducts.push(newProduct);
-          } else {
-            savedProducts.push(existing);
-          }
+          savedProducts.push(updatedProduct);
         }
 
         return savedProducts;
@@ -162,5 +159,8 @@ const resolvers = {
     },
   },
 };
+
+module.exports = resolvers;
+
 
 module.exports = resolvers;
