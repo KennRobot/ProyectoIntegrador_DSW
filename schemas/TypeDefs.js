@@ -1,6 +1,7 @@
 const { gql } = require('apollo-server-express');
 
 const typeDefs = gql`
+  "Dirección fiscal o física del cliente"
   type Address {
     street: String
     exterior: String
@@ -13,6 +14,7 @@ const typeDefs = gql`
     country: String
   }
 
+  "Input para la dirección del cliente"
   input AddressInput {
     street: String
     exterior: String
@@ -25,6 +27,7 @@ const typeDefs = gql`
     country: String
   }
 
+  "Cliente registrado en Facturapi y/o en MongoDB"
   type Client {
     id: ID
     legal_name: String
@@ -34,6 +37,7 @@ const typeDefs = gql`
     address: Address
   }
 
+  "Datos necesarios para registrar un cliente"
   input ClientInput {
     legal_name: String!
     tax_id: String!
@@ -42,21 +46,19 @@ const typeDefs = gql`
     address: AddressInput
   }
 
-  input ProductInput {
-  description: String!
-  product_key: String!
-  price: Float!
-  tax_included: Boolean
-  taxes: [TaxInput]
-  unit_key: String!
-  sku: String
+  "Información de un impuesto asociado a un producto"
+  type Tax {
+    type: String
+    rate: Float
   }
 
+  "Input para definir un impuesto aplicado al producto"
   input TaxInput {
     type: String!
     rate: Float
   }
 
+  "Producto registrado en Facturapi y/o MongoDB"
   type Product {
     id: ID
     description: String
@@ -68,46 +70,64 @@ const typeDefs = gql`
     sku: String
   }
 
-  type Tax {
-    type: String
-    rate: Float
+  "Datos necesarios para registrar un producto"
+  input ProductInput {
+    description: String!
+    product_key: String!
+    price: Float!
+    tax_included: Boolean
+    taxes: [TaxInput]
+    unit_key: String!
+    sku: String
   }
-  
-input InvoiceItemInput {
-  quantity: Float!
-  product: String! 
-}
 
+  "Input para un ítem de factura, incluye cantidad y referencia al ID del producto"
+  input InvoiceItemInput {
+    quantity: Float!
+    product: String! 
+  }
 
-input InvoiceInput {
-  customer: String!
-  items: [InvoiceItemInput!]!
-  payment_form: String
-  payment_method: String
-  use: String
-}
+  "Input para crear una factura con cliente, productos y método de pago"
+  input InvoiceInput {
+    customer: String!
+    items: [InvoiceItemInput!]!
+    payment_form: String
+    payment_method: String
+    use: String
+  }
 
-type Invoice {
-  id: String
-  status: String
-  pdf_url: String
-  xml_url: String
-  customer: String
-  created_at: String
-}
-
+  "Factura generada en Facturapi y guardada en MongoDB"
+  type Invoice {
+    id: String
+    status: String
+    pdf_url: String
+    xml_url: String
+    customer: String
+    created_at: String
+  }
 
   type Query {
+    "Sincroniza todos los clientes desde Facturapi a MongoDB"
     syncClientsFromFacturapi: [Client]
+
+    "Obtiene todos los clientes desde MongoDB"
     getAllClients: [Client]
 
+    "Sincroniza todos los productos desde Facturapi a MongoDB"
     syncProductsFromFacturapi: [Product]
+
+    "Obtiene todos los productos desde MongoDB"
     getAllProducts: [Product]
   }
 
   type Mutation {
+    "Crea un cliente en Facturapi y lo guarda en MongoDB"
     createClient(input: ClientInput!): Client
+
+    "Crea un producto en Facturapi y lo guarda en MongoDB"
     createProduct(input: ProductInput!): Product
+
+    "Genera una factura en Facturapi y la guarda en MongoDB"
     createInvoice(input: InvoiceInput!): Invoice
   }
 `;

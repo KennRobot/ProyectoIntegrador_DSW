@@ -231,9 +231,9 @@ const resolvers = {
   });
 
 
-    await mongoInvoice.save(); // <- ¡Faltaba esto!
+    await mongoInvoice.save();
 
-    return { // <- ¡Faltaba esto!
+    return {
       id: invoice.id,
       status: invoice.status,
       pdf_url: invoice.pdf_url,
