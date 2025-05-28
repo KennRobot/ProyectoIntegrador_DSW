@@ -72,6 +72,29 @@ const typeDefs = gql`
     type: String
     rate: Float
   }
+  
+input InvoiceItemInput {
+  quantity: Float!
+  product: String! 
+}
+
+
+input InvoiceInput {
+  customer: String!
+  items: [InvoiceItemInput!]!
+  payment_form: String
+  payment_method: String
+  use: String
+}
+
+type Invoice {
+  id: String
+  status: String
+  pdf_url: String
+  xml_url: String
+  customer: String
+  created_at: String
+}
 
 
   type Query {
@@ -85,6 +108,7 @@ const typeDefs = gql`
   type Mutation {
     createClient(input: ClientInput!): Client
     createProduct(input: ProductInput!): Product
+    createInvoice(input: InvoiceInput!): Invoice
   }
 `;
 

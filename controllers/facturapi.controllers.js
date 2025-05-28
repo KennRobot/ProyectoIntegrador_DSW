@@ -1,6 +1,7 @@
 const axios = require('axios');
 const Client = require('../models/clientes.model');
 const Product = require('../models/products.model');
+const Invoice = require('../models/factura.model');
 
 const FACTURAPI_KEY = process.env.FACTURAPI_KEY;
 
@@ -157,10 +158,97 @@ const resolvers = {
         throw new Error(error.response?.data?.message || 'Failed to create product');
       }
     },
+    //FACTURAS
+    createInvoice: async (_, { input }) => {
+  try {
+    // Buscar productos completos para cada item
+    const itemsComplete = await Promise.all(
+      input.items.map(async (item) => {
+        const product = await Product.findOne({ id: item.product });
+        if (!product) throw new Error(`Producto con id ${item.product} no encontrado`);
+
+        return {
+          quantity: item.quantity,
+          product: {
+            description: product.description,
+            product_key: product.product_key,
+            price: product.price,
+            tax_included: product.tax_included,
+            taxes: product.taxes,
+            unit_key: product.unit_key,
+            sku: product.sku
+          }
+        };
+      })
+    );
+
+    const { data: invoice } = await facturapi.post('/invoices', {
+      customer: input.customer,
+      items: itemsComplete,
+      payment_form: input.payment_form,
+      payment_method: input.payment_method,
+      use: input.use
+    });
+
+    // Guardar en MongoDB con datos que regresa Facturapi
+  const mongoInvoice = new Invoice({
+    facturapi_id: invoice.id,
+    customer: invoice.customer,
+    items: invoice.items.map(item => {
+      let taxes = item.product.taxes;
+
+      if (typeof taxes === 'string') {
+        try {
+          taxes = JSON.parse(taxes);
+        } catch (e) {
+          console.warn('No se pudo parsear taxes, se asigna arreglo vacío', e);
+          taxes = [];
+        }
+      }
+
+      // Normalizar impuestos como strings
+      taxes = Array.isArray(taxes)
+        ? taxes.map(t => typeof t === 'string' ? t : JSON.stringify(t))
+        : [];
+
+      return {
+        product: {
+          ...item.product,
+          taxes
+        },
+        quantity: item.quantity,
+        description: item.description,
+        unit_price: item.unit_price
+      };
+    }),
+    total: invoice.total,
+    payment_form: invoice.payment_form,
+    payment_method: invoice.payment_method,
+    use: invoice.use,
+    status: invoice.status,
+    pdf_url: invoice.pdf_url,
+    xml_url: invoice.xml_url
+  });
+
+
+    await mongoInvoice.save(); // <- ¡Faltaba esto!
+
+    return { // <- ¡Faltaba esto!
+      id: invoice.id,
+      status: invoice.status,
+      pdf_url: invoice.pdf_url,
+      xml_url: invoice.xml_url
+    };
+
+  } catch (error) {
+    console.error("❌ Error creando factura:", error.response?.data || error.message || error);
+    throw new Error(error.response?.data?.message || error.message || "No se pudo crear la factura");
+  }
+}
+
   },
 };
 
 module.exports = resolvers;
 
 
-module.exports = resolvers;
