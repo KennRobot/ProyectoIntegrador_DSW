@@ -8,6 +8,7 @@ const Invoice = require('../models/factura.model');
 
 const FACTURAPI_KEY = process.env.FACTURAPI_KEY;
 
+
 const facturapi = axios.create({
   baseURL: 'https://www.facturapi.io/v2',
   headers: {
@@ -17,38 +18,91 @@ const facturapi = axios.create({
 
 async function generateInvoicePdf(invoiceData, outputPath) {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 30 });
+    const doc = new PDFDocument({ margin: 40 });
     const stream = fs.createWriteStream(outputPath);
 
     doc.pipe(stream);
 
-    // Cabecera
-    doc.fontSize(18).text('Factura', { align: 'center' });
-    doc.moveDown();
+    // === ENCABEZADO CON ESTILO ===
+    doc
+      .rect(0, 0, doc.page.width, 70)
+      .fill('#003366')
+      .fillColor('white')
+      .font('Helvetica-Bold')
+      .fontSize(24)
+      .text('FACTURA ELECTRÓNICA', 40, 25);
 
-    // Cliente
-    doc.fontSize(12).text(`Cliente: ${invoiceData.customer.legal_name || 'N/A'}`);
-    doc.text(`RFC: ${invoiceData.customer.tax_id || 'N/A'}`);
-    doc.text(`Email: ${invoiceData.customer.email || 'N/A'}`);
-    doc.moveDown();
+    // === LOGO (Predeterminado) ===
+    try {
+      doc.image('logo.png', doc.page.width - 120, 15, { width: 80 });
+    } catch (e) {
+      // Si falla, ignora el logo
+    }
 
-    // Items
-    doc.text('Productos:');
-    invoiceData.items.forEach((item, i) => {
-      const description = item.product?.description || 'Sin descripción';
-      const quantity = item.quantity ?? 0;
-      const unitPrice = Number(item.unit_price ?? 0);
+    doc.moveDown(3).fillColor('black');
 
-      doc.text(
-        `${i + 1}. ${description} - Cantidad: ${quantity} - Precio Unitario: $${unitPrice.toFixed(2)}`
-      );
+    // === DATOS DEL CLIENTE ===
+    doc.font('Helvetica').fontSize(12);
+    doc.text(`Cliente: ${invoiceData.customer?.legal_name || 'N/A'}`);
+    doc.text(`RFC: ${invoiceData.customer?.tax_id || 'N/A'}`);
+    doc.text(`Email: ${invoiceData.customer?.email || 'N/A'}`);
+    doc.moveDown(1.5);
+
+    // === TABLA SIMULADA DE PRODUCTOS ===
+    doc.font('Helvetica-Bold').fontSize(13).text('Productos:', { underline: true });
+    doc.moveDown(0.5);
+
+    // Encabezados de tabla
+    doc.fontSize(11).font('Helvetica-Bold');
+    const startY = doc.y;
+    doc.text('Descripción', 40, startY);
+    doc.text('Cantidad', 250, startY);
+    doc.text('Precio Unitario', 350, startY);
+    doc.text('Subtotal', 470, startY);
+    doc.moveTo(40, startY + 15).lineTo(550, startY + 15).stroke();
+
+    // Filas
+    doc.font('Helvetica');
+    let y = startY + 20;
+
+    invoiceData.items.forEach(item => {
+      // Asegurarse que product sea objeto con datos o al menos un objeto vacío
+      const product = typeof item.product === 'object' && item.product !== null ? item.product : {};
+      const desc = product.description || 'Sin descripción';
+      const qty = item.quantity ?? 0;
+      const unit = Number(product.price ?? 0);
+      const subtotal = qty * unit;
+
+      doc.text(desc, 40, y);
+      doc.text(qty.toString(), 250, y);
+      doc.text(`$${unit.toFixed(2)}`, 350, y);
+      doc.text(`$${subtotal.toFixed(2)}`, 470, y);
+
+      y += 20;
     });
 
-    doc.moveDown();
+    doc.moveDown(2);
 
-    // Total
+    // === TOTAL CON ÉNFASIS ===
     const total = invoiceData.total ?? 0;
-    doc.fontSize(14).text(`Total: $${total.toFixed(2)}`, { align: 'right' });
+    doc
+      .fontSize(14)
+      .font('Helvetica-Bold')
+      .fillColor('#003366')
+      .text(`Total: $${total.toFixed(2)}`, { align: 'right' })
+      .fillColor('black');
+
+    // === PIE DE PÁGINA ===
+    doc.fontSize(10).fillColor('gray');
+    doc.text(
+      'Gracias por su preferencia. Esta factura ha sido generada automáticamente por nuestro sistema.',
+      40,
+      doc.page.height - 60,
+      {
+        align: 'center',
+        width: doc.page.width - 80
+      }
+    );
 
     doc.end();
 
@@ -56,6 +110,7 @@ async function generateInvoicePdf(invoiceData, outputPath) {
     stream.on('error', reject);
   });
 }
+
 
 const resolvers = {
   Query: {
