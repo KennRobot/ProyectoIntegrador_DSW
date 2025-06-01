@@ -8,6 +8,16 @@ const Invoice = require('../models/factura.model');
 
 const FACTURAPI_KEY = process.env.FACTURAPI_KEY;
 
+const twilio = require('twilio');
+
+const twilioClient = twilio(
+  process.env.TWILIO_ACCOUNT_SID,
+  process.env.TWILIO_AUTH_TOKEN
+);
+
+const TWILIO_SMS_NUMBER = process.env.TWILIO_PHONE_NUMBER;
+const TWILIO_WHATSAPP_NUMBER = process.env.TWILIO_WHATSAPP_NUMBER;
+
 
 const facturapi = axios.create({
   baseURL: 'https://www.facturapi.io/v2',
@@ -111,6 +121,41 @@ async function generateInvoicePdf(invoiceData, outputPath) {
   });
 }
 
+
+async function notifyClient({ phone, name, total, id }) {
+  if (!phone){
+    console.error('Error enviando mensaje. Numero vacio');
+    return;
+  } 
+  
+
+  const messageBody = `Hola ${name || 'cliente'}, gracias por tu compra. 
+Factura generada: ${id}
+Total: $${total.toFixed(2)}
+PDF: El archivo se encuentra en su bandeja de correo.`;
+
+  try {
+    // Enviar SMS
+    await twilioClient.messages.create({
+      body: messageBody,
+      from: TWILIO_SMS_NUMBER,
+      to: phone,
+    });
+
+    // Enviar WhatsApp (si es número válido, con prefijo)
+    if (!phone.startsWith('whatsapp:')) {
+      await twilioClient.messages.create({
+        body: messageBody,
+        from: TWILIO_WHATSAPP_NUMBER,
+        to: `whatsapp:${phone}`,
+      });
+    }
+
+    console.log(`Mensaje enviado a ${phone}`);
+  } catch (err) {
+    console.error('Error enviando mensaje:', err.message);
+  }
+}
 
 const resolvers = {
   Query: {
@@ -336,6 +381,20 @@ const resolvers = {
 
         console.log(`PDF generado en ${pdfPath}`);
 
+        const clientInDb = await Client.findOne({ id: invoiceCreated.customer.id });
+
+        if (!clientInDb) {
+          console.warn('Cliente no encontrado en base de datos. No se enviará notificación.');
+        } else {
+          await notifyClient({
+            phone: clientInDb.phone,
+            name: clientInDb.legal_name,
+            total: invoiceCreated.total,
+            id: invoiceCreated.id,
+          });
+        }
+
+
         return {
           id: invoiceCreated.id,
           status: invoiceCreated.status,
@@ -344,7 +403,7 @@ const resolvers = {
         };
 
       } catch (error) {
-        console.error("❌ Error creando factura:", error.response?.data || error.message || error);
+        console.error("Error creando factura:", error.response?.data || error.message || error);
         throw new Error(error.response?.data?.message || error.message || "No se pudo crear la factura");
       }
     },
