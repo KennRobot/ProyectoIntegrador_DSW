@@ -5,7 +5,7 @@ const PDFDocument = require('pdfkit');
 const Client = require('../models/clientes.model');
 const Product = require('../models/products.model');
 const Invoice = require('../models/factura.model');
-
+const sgMail = require('@sendgrid/mail');
 const FACTURAPI_KEY = process.env.FACTURAPI_KEY;
 
 const twilio = require('twilio');
@@ -25,6 +25,15 @@ const facturapi = axios.create({
     Authorization: `Bearer ${FACTURAPI_KEY}`,
   },
 });
+
+const OpenAI = require("openai");
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+
+
+
 
 async function generateInvoicePdf(invoiceData, outputPath) {
   return new Promise((resolve, reject) => {
@@ -156,6 +165,36 @@ PDF: El archivo se encuentra en su bandeja de correo.`;
     console.error('Error enviando mensaje:', err.message);
   }
 }
+
+//Enviar Correo
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+async function sendInvoiceByEmail({ email, name, pdfPath, facturaID, resumenIA = "" }) {
+  try {
+    const pdfBuffer = fs.readFileSync(pdfPath);
+
+    const msg = {
+      to: email,
+      from: 'araaanteca@ittepic.edu.mx', // correo verificado en SendGrid
+      subject: `Tu factura electrónica: ${facturaID}`,
+      text: `Hola ${name}, gracias por tu compra. Te adjuntamos tu factura en PDF.\n\nResumen:\n${resumenIA}`,
+      attachments: [
+        {
+          content: pdfBuffer.toString('base64'),
+          filename: `${facturaID}.pdf`,
+          type: 'application/pdf',
+          disposition: 'attachment',
+        }
+      ],
+    };
+
+    await sgMail.send(msg);
+    console.log(`Factura enviada por correo a ${email}`);
+  } catch (err) {
+    console.error("Error enviando correo:", err.message);
+  }
+}
+
 
 const resolvers = {
   Query: {
@@ -330,6 +369,14 @@ const resolvers = {
           use: input.use,
         });
 
+        // Resumen con OpenAI
+        const summaryMessage = await generateSummaryWithAI(
+          invoiceCreated.customer?.legal_name || 'Customer',
+          invoiceCreated.items,
+          invoiceCreated.total
+          );
+         
+
         const mongoInvoice = new Invoice({
           facturapi_id: invoiceCreated.id,
           customer: invoiceCreated.customer,
@@ -391,9 +438,19 @@ const resolvers = {
             name: clientInDb.legal_name,
             total: invoiceCreated.total,
             id: invoiceCreated.id,
+            mensajeIA: summaryMessage 
           });
         }
 
+        await sendInvoiceByEmail({
+          email: clientInDb.email,
+          name: clientInDb.legal_name,
+          pdfPath,
+          facturaID: invoiceCreated.id,
+          resumenIA: summaryMessage
+        });
+        
+        
 
         return {
           id: invoiceCreated.id,
@@ -409,5 +466,31 @@ const resolvers = {
     },
   },
 };
+
+//Resumen Con IA 
+async function generateSummaryWithAI(clienteNombre, productos, total) {
+  const nombres = productos.map(p => p.product?.description || 'Product').join(', ');
+
+  const prompt = `Write a short, friendly, and professional message for a customer named "${clienteNombre}".
+The message should thank them for their purchase and include a summary:
+- Products: ${nombres}
+- Total: $${total.toFixed(2)}.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.7,
+      max_tokens: 100
+    });
+
+    return response.choices[0].message.content;
+
+  } catch (err) {
+    console.warn("⚠️ OpenAI failed, using default summary. Error:", err.message);
+    return `Hello ${clienteNombre}, thank you for your purchase of ${nombres}. Total: $${total.toFixed(2)}.`;
+  }
+}
+
 
 module.exports = resolvers;
