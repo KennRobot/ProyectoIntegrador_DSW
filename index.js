@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const { ApolloServer } = require('apollo-server-express');
 const playground = require('graphql-playground-middleware-express').default;
@@ -24,9 +25,10 @@ const startServer = async () => {
   app.get('/playground', playground({ endpoint: '/graphql' }));
 
   const PORT = process.env.PORT || 4000;
-  app.listen(PORT, '0.0.0.0', () =>
-    console.log(`Servidor listo en http://0.0.0.0:${PORT}${server.graphqlPath}`)
+ app.listen(PORT, () =>
+    console.log(`Servidor listo en http://localhost:${PORT}${server.graphqlPath}`)
   );
 };
+
 
 startServer();
