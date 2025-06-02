@@ -17,10 +17,13 @@
     "express": "^4.21.2",
     "facturapi": "^4.8.3",
     "fs": "^0.0.1-security",
+    "graphql": "^16.11.0",
     "mongoose": "^8.15.0",
     "openai": "^5.0.1",
     "path": "^0.12.7",
     "pdfkit": "^0.17.1",
-    "twilio": "^5.7.0"
+    "swagger-ui-express": "^5.0.1",
+    "twilio": "^5.7.0",
+    "yamljs": "^0.3.0"
   }
 }
