@@ -13,7 +13,7 @@ const startServer = async () => {
   connectDB();
 
   // Servidor Apollo
-  const server = new ApolloServer({ typeDefs, resolvers });
+  const server = new ApolloServer({ typeDefs, resolvers, persistedQueries: false, });
   await server.start();
   server.applyMiddleware({ app });
 
