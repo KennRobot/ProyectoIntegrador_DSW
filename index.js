@@ -18,9 +18,10 @@ const startServer = async () => {
   server.applyMiddleware({ app });
 
   const PORT = process.env.PORT || 4000;
-  app.listen(PORT, () =>
-    console.log(`Servidor listo en http://localhost:${PORT}${server.graphqlPath}`)
+  app.listen(PORT, '0.0.0.0', () =>
+  console.log(`Servidor listo en http://0.0.0.0:${PORT}${server.graphqlPath}`)
   );
+
 };
 
 startServer();
