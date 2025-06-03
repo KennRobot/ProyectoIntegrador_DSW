@@ -200,7 +200,7 @@ paths:
                     input:
                       description: "Producto actualizado"
                       price: 120.0
-                            deleteProduct:
+              deleteProduct:
                 summary: Eliminar un producto
                 value:
                   query: |
