@@ -132,11 +132,11 @@ async function generateInvoicePdf(invoiceData, outputPath) {
 
 
 async function notifyClient({ phone, name, total, id }) {
-  if (!phone){
+  if (!phone) {
     console.error('Error enviando mensaje. Numero vacio');
     return;
-  } 
-  
+  }
+
 
   const messageBody = `Hola ${name || 'cliente'}, gracias por tu compra. 
 Factura generada: ${id}
@@ -243,6 +243,13 @@ const resolvers = {
       return await Client.find();
     },
 
+    getClientById: async (_, { id }) => {
+      const client = await Client.findOne({ id }); // o por _id si es el de Mongo
+      if (!client) throw new Error('Cliente no encontrado');
+      return client;
+    },
+
+
     // PRODUCTOS
     syncProductsFromFacturapi: async () => {
       try {
@@ -279,6 +286,10 @@ const resolvers = {
     getAllProducts: async () => {
       return await Product.find();
     },
+    getProductById: async (_, { id }) => {
+      return await Product.findOne({ id });
+    },
+
   },
 
   Mutation: {
@@ -475,8 +486,8 @@ const resolvers = {
           invoiceCreated.customer?.legal_name || 'Customer',
           invoiceCreated.items,
           invoiceCreated.total
-          );
-         
+        );
+
 
         const mongoInvoice = new Invoice({
           facturapi_id: invoiceCreated.id,
@@ -539,7 +550,7 @@ const resolvers = {
             name: clientInDb.legal_name,
             total: invoiceCreated.total,
             id: invoiceCreated.id,
-            mensajeIA: summaryMessage 
+            mensajeIA: summaryMessage
           });
         }
 
@@ -550,8 +561,8 @@ const resolvers = {
           facturaID: invoiceCreated.id,
           resumenIA: summaryMessage
         });
-        
-        
+
+
 
         return {
           id: invoiceCreated.id,

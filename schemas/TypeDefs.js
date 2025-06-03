@@ -136,8 +136,14 @@ const typeDefs = gql`
     "Sincroniza todos los productos desde Facturapi a MongoDB"
     syncProductsFromFacturapi: [Product]
 
+    "Obtiene un cliente por su ID desde MongoDB"
+    getClientById(id: ID!): Client
+
     "Obtiene todos los productos desde MongoDB"
     getAllProducts: [Product]
+
+    "Obtiene un producto por su ID desde MongoDB"
+    getProductById(id: ID!): Product
   }
 
   type Mutation {
