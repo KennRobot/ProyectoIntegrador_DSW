@@ -324,6 +324,54 @@ const resolvers = {
         throw new Error(error.response?.data?.message || 'Failed to create client');
       }
     },
+    updateClient: async (_, { id, input }) => {
+      try {
+        // Actualizar en Facturapi
+        const { data: facturapiClient } = await facturapi.put(`/customers/${id}`, input);
+
+        // Actualizar en MongoDB usando Mongoose
+        const updatedClient = await Client.findOneAndUpdate(
+          { id: facturapiClient.id },
+          {
+            legal_name: facturapiClient.legal_name,
+            tax_id: facturapiClient.tax_id,
+            email: facturapiClient.email,
+            phone: facturapiClient.phone,
+            address: facturapiClient.address,
+          },
+          { new: true }
+        );
+
+        if (!updatedClient) {
+          throw new Error('Cliente no encontrado en MongoDB');
+        }
+
+        return updatedClient;
+      } catch (error) {
+        console.error('❌ Error al actualizar cliente:', error.response?.data || error.message);
+        throw new Error(error.response?.data?.message || 'No se pudo actualizar el cliente');
+      }
+    },
+
+    deleteClient: async (_, { id }) => {
+      try {
+        // Eliminar en Facturapi
+        await facturapi.delete(`/customers/${id}`);
+
+        // Eliminar en MongoDB
+        const deletedClient = await Client.findOneAndDelete({ id });
+
+        if (!deletedClient) {
+          throw new Error('Cliente no encontrado en MongoDB');
+        }
+
+        return true;
+      } catch (error) {
+        console.error('❌ Error al eliminar cliente:', error.response?.data || error.message);
+        throw new Error(error.response?.data?.message || 'No se pudo eliminar el cliente');
+      }
+    },
+
 
     // PRODUCTOS
     createProduct: async (_, { input }) => {
@@ -348,6 +396,59 @@ const resolvers = {
         throw new Error(error.response?.data?.message || 'Failed to create product');
       }
     },
+
+     // Actualizar Producto
+    updateProduct: async (_, { id, input }) => {
+      try {
+        // 1. Actualizar en Facturapi
+        const { data: facturapiProduct } = await facturapi.put(`/products/${id}`, input);
+
+        // 2. Actualizar en MongoDB
+        const updatedProduct = await Product.findOneAndUpdate(
+          { id: facturapiProduct.id },
+          {
+            description: facturapiProduct.description,
+            product_key: facturapiProduct.product_key,
+            price: facturapiProduct.price,
+            tax_included: facturapiProduct.tax_included,
+            taxes: facturapiProduct.taxes,
+            unit_key: facturapiProduct.unit_key,
+            sku: facturapiProduct.sku,
+          },
+          { new: true } // para retornar el documento actualizado
+        );
+
+        if (!updatedProduct) {
+          throw new Error('Producto no encontrado en MongoDB');
+        }
+
+        return updatedProduct;
+      } catch (error) {
+        console.error('❌ Error al actualizar producto:', error.response?.data || error.message);
+        throw new Error(error.response?.data?.message || 'No se pudo actualizar el producto');
+      }
+      },
+
+
+    deleteProduct: async (_, { id }) => {
+      try {
+        // 1. Eliminar de Facturapi
+        await facturapi.delete(`/products/${id}`);
+
+        // 2. Eliminar de MongoDB
+        const result = await Product.findOneAndDelete({ id });
+
+        if (!result) {
+          throw new Error('Producto no encontrado en MongoDB');
+        }
+
+        return true;
+      } catch (error) {
+        console.error('❌ Error al eliminar producto:', error.response?.data || error.message);
+        throw new Error(error.response?.data?.message || 'No se pudo eliminar el producto');
+      }
+    },
+
 
     // FACTURAS
     createInvoice: async (_, { input }) => {
