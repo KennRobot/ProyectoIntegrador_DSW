@@ -1,22 +1,23 @@
 openapi: 3.0.3
 info:
-  title: API de Facturación con GraphQL Proyecto Integrador DSW
+  title: API de Facturación con GraphQL - Proyecto Integrador DSW
   version: 1.0.0
-  description: Documentación Swagger de todos los endpoints de la API de Facturación con GraphQL Proyecto Integrador DSW con servicios de notifación via SMS, Whatsapp y e-mail.
+  description: >
+    API GraphQL para gestión de clientes, productos y facturas con integración a Facturapi. Todas las operaciones se realizan a través del endpoint único `/graphql`. Incluye creación, actualización, eliminación y sincronización de datos. También permite emitir facturas electrónicas con soporte para PDF, XML y notificaciones por correo o WhatsApp.
 
 servers:
   - url: http://localhost:4000/graphql
     description: Servidor local
   - url: https://proyectointegrador-dsw.onrender.com/playground
-    description: Servidor principal de GraphQL
+    description: Servidor principal en Render
 
 tags:
   - name: Clients
-    description: Operaciones sobre clientes
+    description: Gestión de clientes (crear, actualizar, eliminar, obtener, sincronizar)
   - name: Products
-    description: Operaciones sobre los productos
+    description: Gestión de productos (crear, actualizar, eliminar, obtener, sincronizar)
   - name: Invoice
-    description: Operaciones sobre la factura
+    description: Generación de facturas electrónicas
 
 paths:
   /graphql:
@@ -35,67 +36,236 @@ paths:
                   type: string
                   example: |
                     query {
-                      getInvoices {
+                      getAllClients {
                         id
-                        uuid
-                        folio
-                        series
-                        createdAt
-                        total
-                        client {
-                          id
-                          legal_name
-                        }
+                        legal_name
+                        tax_id
+                        email
+                        phone
                       }
                     }
                 variables:
                   type: object
+                  example: {}
       responses:
         '200':
-          description: Respuesta con los datos solicitados
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      getInvoices:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              type: string
-                              example: "665a6eced47639df2a99921f"
-                            uuid:
-                              type: string
-                              example: "D6A8B31D-A76B-4F6E-BD28-FAAA23B79025"
-                            folio:
-                              type: integer
-                              example: 123
-                              description: Folio asignado por Facturapi a la factura
-                            series:
-                              type: string
-                              example: "A"
-                              description: Serie utilizada en la factura
-                            createdAt:
-                              type: string
-                              format: date-time
-                              example: "2025-06-01T19:45:20.000Z"
-                            total:
-                              type: number
-                              format: float
-                              example: 2560.5
-                            client:
-                              type: object
-                              properties:
-                                id:
-                                  type: string
-                                  example: "cl01"
-                                legal_name:
-                                  type: string
-                                  example: "Empresa Ejemplo S.A. de C.V."
+          description: Respuesta exitosa
         '400':
-          description: Error en la sintaxis del query
+          description: Error en la consulta
+
+components:
+  schemas:
+    AddressInput:
+      type: object
+      properties:
+        street: { type: string }
+        exterior: { type: string }
+        interior: { type: string }
+        neighborhood: { type: string }
+        zip: { type: string }
+        city: { type: string }
+        municipality: { type: string }
+        state: { type: string }
+        country: { type: string }
+
+    ClientInput:
+      type: object
+      required: [legal_name, tax_id, email]
+      properties:
+        legal_name: { type: string }
+        tax_id: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        address:
+          $ref: '#/components/schemas/AddressInput'
+
+    ProductInput:
+      type: object
+      required: [description, product_key, price, unit_key]
+      properties:
+        description: { type: string }
+        product_key: { type: string }
+        price: { type: number }
+        tax_included: { type: boolean }
+        unit_key: { type: string }
+        sku: { type: string }
+        taxes:
+          type: array
+          items:
+            type: object
+            properties:
+              type: { type: string }
+              rate: { type: number }
+
+    InvoiceInput:
+      type: object
+      required: [customer, items]
+      properties:
+        customer: { type: string }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              quantity: { type: number }
+              product: { type: string }
+        payment_form: { type: string }
+        payment_method: { type: string }
+        use: { type: string }
+
+x-examples:
+  getAllClients:
+    query: |
+      query {
+        getAllClients {
+          id
+          legal_name
+          tax_id
+          email
+          phone
+        }
+      }
+
+  getClientById:
+    query: |
+      query {
+        getClientById(id: "cliente123") {
+          id
+          legal_name
+          tax_id
+          email
+        }
+      }
+
+  createClient:
+    query: |
+      mutation CreateClient($input: ClientInput!) {
+        createClient(input: $input) {
+          id
+          legal_name
+          email
+        }
+      }
+    variables:
+      input:
+        legal_name: "Ejemplo S.A. de C.V."
+        tax_id: "ABC123456789"
+        email: "cliente@ejemplo.com"
+        phone: "5555555555"
+        address:
+          street: "Av. Central"
+          exterior: "10"
+          neighborhood: "Centro"
+          zip: "06000"
+          city: "CDMX"
+          municipality: "Benito Juárez"
+          state: "CDMX"
+          country: "MX"
+
+  updateClient:
+    query: |
+      mutation {
+        updateClient(id: "cliente123", input: {
+          phone: "5555001122"
+        }) {
+          id
+          legal_name
+          phone
+        }
+      }
+
+  deleteClient:
+    query: |
+      mutation {
+        deleteClient(id: "cliente123")
+      }
+
+  syncClients:
+    query: |
+      query {
+        syncClientsFromFacturapi {
+          id
+          legal_name
+        }
+      }
+
+  getAllProducts:
+    query: |
+      query {
+        getAllProducts {
+          id
+          description
+          price
+        }
+      }
+
+  getProductById:
+    query: |
+      query {
+        getProductById(id: "producto123") {
+          id
+          description
+          product_key
+        }
+      }
+
+  createProduct:
+    query: |
+      mutation CreateProduct($input: ProductInput!) {
+        createProduct(input: $input) {
+          id
+          description
+        }
+      }
+    variables:
+      input:
+        description: "Producto de prueba"
+        product_key: "10101504"
+        price: 199.99
+        tax_included: true
+        unit_key: "H87"
+
+  updateProduct:
+    query: |
+      mutation {
+        updateProduct(id: "producto123", input: {
+          price: 250.00
+        }) {
+          id
+          price
+        }
+      }
+
+  deleteProduct:
+    query: |
+      mutation {
+        deleteProduct(id: "producto123")
+      }
+
+  syncProducts:
+    query: |
+      query {
+        syncProductsFromFacturapi {
+          id
+          description
+        }
+      }
+
+  createInvoice:
+    query: |
+      mutation CreateInvoice($input: InvoiceInput!) {
+        createInvoice(input: $input) {
+          id
+          status
+          pdf_url
+        }
+      }
+    variables:
+      input:
+        customer: "cliente_facturapi_id"
+        items:
+          - quantity: 2
+            product: "producto_facturapi_id"
+        payment_form: "03"
+        payment_method: "PUE"
+        use: "G03"
