@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: API de Facturación con GraphQL Proyecto Integrador DSW
   version: 1.0.0
-  description: Documentación Swagger de todos los endpoints de la API de Facturación con GraphQL Proyecto Integrador DSW con servicios de notifacion via SMS, Whatsapp y e-mail.
+  description: Documentación Swagger de todos los endpoints de la API de Facturación con GraphQL Proyecto Integrador DSW con servicios de notifación via SMS, Whatsapp y e-mail.
 
 servers:
   - url: http://localhost:4000/graphql
@@ -35,10 +35,17 @@ paths:
                   type: string
                   example: |
                     query {
-                      getAllClients {
+                      getInvoices {
                         id
-                        legal_name
-                        tax_id
+                        uuid
+                        folio
+                        series
+                        createdAt
+                        total
+                        client {
+                          id
+                          legal_name
+                        }
                       }
                     }
                 variables:
@@ -46,5 +53,49 @@ paths:
       responses:
         '200':
           description: Respuesta con los datos solicitados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      getInvoices:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              example: "665a6eced47639df2a99921f"
+                            uuid:
+                              type: string
+                              example: "D6A8B31D-A76B-4F6E-BD28-FAAA23B79025"
+                            folio:
+                              type: integer
+                              example: 123
+                              description: Folio asignado por Facturapi a la factura
+                            series:
+                              type: string
+                              example: "A"
+                              description: Serie utilizada en la factura
+                            createdAt:
+                              type: string
+                              format: date-time
+                              example: "2025-06-01T19:45:20.000Z"
+                            total:
+                              type: number
+                              format: float
+                              example: 2560.5
+                            client:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  example: "cl01"
+                                legal_name:
+                                  type: string
+                                  example: "Empresa Ejemplo S.A. de C.V."
         '400':
           description: Error en la sintaxis del query
