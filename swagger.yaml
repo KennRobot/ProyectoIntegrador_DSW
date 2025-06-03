@@ -1,0 +1,58 @@
+openapi: 3.0.3
+info:
+  title: API de Facturación con GraphQL Proyecto Integrador DSW
+  description: Documentación de los endpoints usados en la API de Facturación con GraphQL Proyecto Integrador DSW con servicios de notifacion via SMS, Whatsapp y e-mail.
+  version: 1.0.0
+servers:
+  - url: https://proyectointegrador-dsw.onrender.com/playground
+paths:
+  /graphql:
+    post:
+      summary: Endpoint principal de GraphQL
+      description: Utiliza este endpoint para ejecutar queries y mutations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  example: |
+                    query {
+                      getClient(id: "123") {
+                        name
+                        email
+                      }
+                    }
+      responses:
+        '200':
+          description: Respuesta exitosa
+
+  /send-pdf:
+    post:
+      summary: Enviar factura PDF por correo electrónico
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                pdfUrl:
+                  type: string
+      responses:
+        '200':
+          description: PDF enviado
+        '500':
+          description: Error en el envío
+
+  /playground:
+    get:
+      summary: Interfaz de pruebas GraphQL
+      responses:
+        '200':
+          description: Devuelve la interfaz del Playground

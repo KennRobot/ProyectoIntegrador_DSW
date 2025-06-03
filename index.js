@@ -6,6 +6,11 @@ const typeDefs = require('./schemas/TypeDefs');
 const resolvers = require('./controllers/facturapi.controllers');
 const connectDB = require('./config/conection');
 
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
+const swaggerDocument = YAML.load('./swagger.yaml');
+
+
 const startServer = async () => {
   const app = express();
 
@@ -20,6 +25,9 @@ const startServer = async () => {
 
   await server.start();
   server.applyMiddleware({ app });
+  
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 
   // Habilita el Playground en /playground
   app.get('/playground', playground({ endpoint: '/graphql' }));
