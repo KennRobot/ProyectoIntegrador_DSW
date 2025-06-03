@@ -4,7 +4,7 @@ info:
   description: Documentación de los endpoints usados en la API de Facturación con GraphQL Proyecto Integrador DSW con servicios de notifacion via SMS, Whatsapp y e-mail.
   version: 1.0.0
 servers:
-  - url: https://proyectointegrador-dsw.onrender.com/playground
+  - url: https://proyectointegrador-dsw.onrender.com/
 paths:
   /graphql:
     post:
