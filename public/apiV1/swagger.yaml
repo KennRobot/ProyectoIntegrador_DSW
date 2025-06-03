@@ -1,10 +1,8 @@
 openapi: 3.0.3
 info:
-  title: API de Facturación con GraphQL - Proyecto Integrador DSW
+  title: API de Facturación con GraphQL Proyecto Integrador DSW
   version: 1.0.0
-  description: >
-    Documentación Swagger de todos los endpoints de la API de Facturación con GraphQL.
-    Incluye servicios de notificación vía SMS, WhatsApp y correo electrónico.
+  description: Documentación Swagger de todos los endpoints de la API de Facturación con GraphQL Proyecto Integrador DSW con servicios de notificación vía SMS, WhatsApp y e-mail.
 
 servers:
   - url: http://localhost:4000/graphql
@@ -19,6 +17,8 @@ tags:
     description: Operaciones sobre productos
   - name: Invoice
     description: Operaciones sobre facturas
+  - name: GraphQL
+    description: Operaciones disponibles vía GraphQL
 
 paths:
   /graphql:
@@ -26,9 +26,8 @@ paths:
       tags:
         - GraphQL
       summary: Punto de entrada único para operaciones GraphQL
-      description: >
-        Utiliza este endpoint para ejecutar cualquier operación GraphQL: queries o mutations.
-        En el campo `query`, coloca tu consulta o mutación GraphQL. En `variables`, pasa los valores requeridos si tu consulta los necesita.
+      description: |
+        Este endpoint permite enviar consultas (`query`) y mutaciones (`mutation`) GraphQL para gestionar clientes, productos y facturas.
       requestBody:
         required: true
         content:
@@ -38,14 +37,8 @@ paths:
               properties:
                 query:
                   type: string
-                variables:
-                  type: object
-            examples:
-              getAllClients:
-                summary: Obtener todos los clientes
-                value:
-                  query: |
-                    query {
+                  example: |
+                    query GetAllClients {
                       getAllClients {
                         id
                         legal_name
@@ -54,181 +47,198 @@ paths:
                         phone
                       }
                     }
-              getClientById:
-                summary: Obtener un cliente por ID
-                value:
-                  query: |
-                    query {
-                      getClientById(id: "cliente123") {
-                        id
-                        legal_name
-                        tax_id
-                        email
-                        phone
-                      }
-                    }
-              syncClientsFromFacturapi:
-                summary: Sincronizar clientes desde Facturapi
-                value:
-                  query: |
-                    query {
-                      syncClientsFromFacturapi {
-                        id
-                        legal_name
-                        tax_id
-                      }
-                    }
-              createClient:
-                summary: Crear un nuevo cliente
-                value:
-                  query: |
-                    mutation CreateClient($input: ClientInput!) {
-                      createClient(input: $input) {
-                        id
-                        legal_name
-                        email
-                      }
-                    }
-                  variables:
-                    input:
-                      legal_name: "Ejemplo S.A. de C.V."
-                      tax_id: "ABC123456789"
-                      email: "cliente@ejemplo.com"
-                      phone: "5555555555"
-                      address:
-                        street: "Av. Central"
-                        exterior: "10"
-                        neighborhood: "Centro"
-                        zip: "06000"
-                        city: "CDMX"
-                        municipality: "Benito Juárez"
-                        state: "CDMX"
-                        country: "MX"
-              updateClient:
-                summary: Actualizar un cliente existente
-                value:
-                  query: |
-                    mutation UpdateClient($id: ID!, $input: UpdateClientInput!) {
-                      updateClient(id: $id, input: $input) {
-                        id
-                        legal_name
-                        email
-                      }
-                    }
-                  variables:
-                    id: "cliente123"
-                    input:
-                      legal_name: "Nuevo Nombre S.A. de C.V."
-                      email: "nuevo@ejemplo.com"
-              deleteClient:
-                summary: Eliminar un cliente
-                value:
-                  query: |
-                    mutation DeleteClient($id: ID!) {
-                      deleteClient(id: $id)
-                    }
-                  variables:
-                    id: "cliente123"
-              getAllProducts:
-                summary: Obtener todos los productos
-                value:
-                  query: |
-                    query {
-                      getAllProducts {
-                        id
-                        description
-                        price
-                      }
-                    }
-              getProductById:
-                summary: Obtener un producto por ID
-                value:
-                  query: |
-                    query {
-                      getProductById(id: "producto123") {
-                        id
-                        description
-                        price
-                      }
-                    }
-              syncProductsFromFacturapi:
-                summary: Sincronizar productos desde Facturapi
-                value:
-                  query: |
-                    query {
-                      syncProductsFromFacturapi {
-                        id
-                        description
-                        price
-                      }
-                    }
-              createProduct:
-                summary: Crear un nuevo producto
-                value:
-                  query: |
-                    mutation CreateProduct($input: ProductInput!) {
-                      createProduct(input: $input) {
-                        id
-                        description
-                        price
-                      }
-                    }
-                  variables:
-                    input:
-                      description: "Producto de ejemplo"
-                      product_key: "10101504"
-                      price: 100.0
-                      tax_included: true
-                      taxes:
-                        - type: "IVA"
-                          rate: 0.16
-                      unit_key: "H87"
-                      sku: "PROD-001"
-              updateProduct:
-                summary: Actualizar un producto existente
-                value:
-                  query: |
-                    mutation UpdateProduct($id: ID!, $input: UpdateProductInput!) {
-                      updateProduct(id: $id, input: $input) {
-                        id
-                        description
-                        price
-                      }
-                    }
-                  variables:
-                    id: "producto123"
-                    input:
-                      description: "Producto actualizado"
-                      price: 120.0
-              deleteProduct:
-                summary: Eliminar un producto
-                value:
-                  query: |
-                    mutation DeleteProduct($id: ID!) {
-                      deleteProduct(id: $id)
-                    }
-                  variables:
-                    id: "producto123"
-              createInvoice:
-                summary: Crear una factura
-                value:
-                  query: |
-                    mutation CreateInvoice($input: InvoiceInput!) {
-                      createInvoice(input: $input) {
-                        id
-                        status
-                        pdf_url
-                        xml_url
-                        created_at
-                      }
-                    }
-                  variables:
-                    input:
-                      customer: "cliente123"
-                      items:
-                        - quantity: 2
-                          product: "producto123"
-                      payment_form: "03"
-                      payment_method: "PUE"
-                      use: "G03"
+                variables:
+                  type: object
+      responses:
+        '200':
+          description: Respuesta exitosa con los datos solicitados
+        '400':
+          description: Error en la sintaxis del query
+      x-codeSamples:
+        - lang: GraphQL
+          label: GetAllClients
+          source: |
+            query GetAllClients {
+              getAllClients {
+                id
+                legal_name
+                tax_id
+                email
+                phone
+              }
+            }
 
+        - lang: GraphQL
+          label: GetClientById
+          source: |
+            query GetClientById {
+              getClientById(id: "cliente123") {
+                id
+                legal_name
+                tax_id
+                email
+                phone
+              }
+            }
+
+        - lang: GraphQL
+          label: SyncClientsFromFacturapi
+          source: |
+            query SyncClients {
+              syncClientsFromFacturapi {
+                id
+                legal_name
+                tax_id
+                email
+                phone
+              }
+            }
+
+        - lang: GraphQL
+          label: GetAllProducts
+          source: |
+            query GetAllProducts {
+              getAllProducts {
+                id
+                product_key
+                description
+                price
+                tax_included
+              }
+            }
+
+        - lang: GraphQL
+          label: GetProductById
+          source: |
+            query GetProductById {
+              getProductById(id: "producto123") {
+                id
+                product_key
+                description
+                price
+                tax_included
+              }
+            }
+
+        - lang: GraphQL
+          label: SyncProductsFromFacturapi
+          source: |
+            query SyncProducts {
+              syncProductsFromFacturapi {
+                id
+                description
+                product_key
+                price
+              }
+            }
+
+        - lang: GraphQL
+          label: CreateClient
+          source: |
+            mutation CreateClient {
+              createClient(input: {
+                legal_name: "Empresa S.A. de C.V.",
+                tax_id: "ABC123456T12",
+                email: "contacto@empresa.com",
+                phone: "5555555555",
+                address: {
+                  street: "Av. Siempre Viva",
+                  exterior: "123",
+                  interior: "2B",
+                  neighborhood: "Centro",
+                  zip: "12345",
+                  city: "Ciudad",
+                  municipality: "Delegación",
+                  state: "Estado",
+                  country: "México"
+                }
+              }) {
+                id
+                legal_name
+              }
+            }
+
+        - lang: GraphQL
+          label: UpdateClient
+          source: |
+            mutation UpdateClient {
+              updateClient(id: "cliente123", input: {
+                email: "nuevo@correo.com"
+              }) {
+                id
+                email
+              }
+            }
+
+        - lang: GraphQL
+          label: DeleteClient
+          source: |
+            mutation DeleteClient {
+              deleteClient(id: "cliente123")
+            }
+
+        - lang: GraphQL
+          label: CreateProduct
+          source: |
+            mutation CreateProduct {
+              createProduct(input: {
+                description: "Servicio de Consultoría",
+                product_key: "84111506",
+                price: 5000,
+                tax_included: true,
+                unit_key: "E48",
+                sku: "SC001",
+                taxes: [
+                  {
+                    type: "IVA",
+                    rate: 0.16
+                  }
+                ]
+              }) {
+                id
+                description
+              }
+            }
+
+        - lang: GraphQL
+          label: UpdateProduct
+          source: |
+            mutation UpdateProduct {
+              updateProduct(id: "producto123", input: {
+                price: 6000
+              }) {
+                id
+                price
+              }
+            }
+
+        - lang: GraphQL
+          label: DeleteProduct
+          source: |
+            mutation DeleteProduct {
+              deleteProduct(id: "producto123")
+            }
+
+        - lang: GraphQL
+          label: CreateInvoice
+          source: |
+            mutation CreateInvoice {
+              createInvoice(input: {
+                customer: "cliente123",
+                items: [
+                  {
+                    quantity: 2,
+                    product: "producto123"
+                  }
+                ],
+                payment_form: "03",
+                payment_method: "PUE",
+                use: "G03"
+              }) {
+                id
+                status
+                pdf_url
+                xml_url
+                created_at
+              }
+            }
