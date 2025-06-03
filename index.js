@@ -6,9 +6,9 @@ const typeDefs = require('./schemas/TypeDefs');
 const resolvers = require('./controllers/facturapi.controllers');
 const connectDB = require('./config/conection');
 
+const path = require('path');
 const swaggerUi = require('swagger-ui-express');
-const YAML = require('yamljs');
-const swaggerDocument = YAML.load('./swagger.yaml');
+const swaggerSpec = require('./swagger.js');
 
 
 const startServer = async () => {
@@ -25,8 +25,13 @@ const startServer = async () => {
 
   await server.start();
   server.applyMiddleware({ app });
-  
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  app.get("/apiV1/swagger.yaml", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "apiV1", "swagger.yaml"));
+  });
+
+  app.use(express.static(path.join(__dirname, "public")));
 
 
   // Habilita el Playground en /playground

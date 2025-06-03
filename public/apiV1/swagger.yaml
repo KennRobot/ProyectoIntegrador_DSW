@@ -1,0 +1,355 @@
+openapi: 3.0.3
+info:
+  title: API de Videojuego - Jugadores y Progreso
+  version: 1.0.0
+  description: API REST para gestionar jugadores, autenticación, progreso y solicitudes de amistad en un videojuego.
+
+servers:
+  - url: http://localhost:3000/apiV1
+    description: Servidor local
+  - url: https://desarrollar-api-documentada.onrender.com/apiV1
+    description: Servidor principal
+
+tags:
+  - name: Users
+    description: Operaciones sobre usuarios
+  - name: Progress
+    description: Progreso y niveles de usuario
+  - name: Friend Requests
+    description: Solicitudes de amistad
+
+paths:
+  /usuarios/register:
+    post:
+      tags:
+        - Users
+      summary: Registrar un nuevo jugador
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioRegistro'
+      responses:
+        '201':
+          description: Usuario registrado con éxito
+
+  /usuarios/login:
+    post:
+      tags:
+        - Users
+      summary: Autenticación y obtención de token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Autenticación exitosa
+
+  /usuarios/{id}:
+    get:
+      tags:
+        - Users
+      summary: Obtener datos de un usuario
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Datos del usuario
+    put:
+      tags:
+        - Users
+      summary: Actualizar información del jugador
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioUpdate'
+      responses:
+        '200':
+          description: Usuario actualizado
+    patch:
+      tags:
+        - Users
+      summary: Actualizar información del jugador parcialmente
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Usuario actualizado parcialmente
+    delete:
+      tags:
+        - Users
+      summary: Eliminar un usuario
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Usuario eliminado
+
+  /usuarios/{id}/progreso:
+    get:
+      tags:
+        - Progress
+      summary: Obtener el progreso del jugador
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Progreso del jugador
+    put:
+      tags:
+        - Progress
+      summary: Actualizar nivel y experiencia
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgresoUpdate'
+      responses:
+        '200':
+          description: Progreso actualizado
+
+  /usuarios/{id}/subirNivel:
+    post:
+      tags:
+        - Progress
+      summary: Sube el nivel del jugador
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Nivel subido
+
+  /usuarios/solicitud:
+    post:
+      tags:
+        - Friend Requests
+      summary: Registrar una solicitud de amistad
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitudAmistad'
+      responses:
+        '200':
+          description: Solicitud registrada
+
+  /usuarios/solicitud/{id}:
+    get:
+      tags:
+        - Friend Requests
+      summary: Obtener datos de una solicitud o lista de solicitudes de un usuario
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Datos de la solicitud o solicitudes del usuario
+    patch:
+      tags:
+        - Friend Requests
+      summary: Actualizar el estado de una solicitud
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                estado:
+                  type: string
+                  enum: [aceptada, rechazada]
+      responses:
+        '200':
+          description: Estado de solicitud actualizado
+    delete:
+      tags:
+        - Friend Requests
+      summary: Eliminar Solicitud
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Solicitud eliminada
+
+components:
+  schemas:
+    Usuario:
+      type: object
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        nivel:
+          type: integer
+        experiencia:
+          type: integer
+        logros:
+          type: array
+          items:
+            type: string
+        ranking:
+          type: integer
+        amigos:
+          type: array
+          items:
+            type: integer
+        solicitudes_pendientes:
+          type: array
+          items:
+            type: integer
+
+    UsuarioRegistro:
+      type: object
+      required: [nombre, email, password]
+      properties:
+        nombre:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+
+    UsuarioUpdate:
+      type: object
+      properties:
+        nombre:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        nivel:
+          type: integer
+        experiencia:
+          type: integer
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    Progreso:
+      type: object
+      properties:
+        id:
+          type: integer
+        nivel:
+          type: integer
+        experiencia:
+          type: integer
+        siguiente_nivel:
+          type: integer
+
+    ProgresoUpdate:
+      type: object
+      properties:
+        nivel:
+          type: integer
+        experiencia:
+          type: integer
+
+    Logro:
+      type: object
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        descripcion:
+          type: string
+
+    Ranking:
+      type: object
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        nivel:
+          type: integer
+        ranking:
+          type: integer
+
+    SolicitudAmistad:
+      type: object
+      properties:
+        id:
+          type: string
+        de_usuario_id:
+          type: integer
+        para_usuario_id:
+          type: integer
+        fecha:
+          type: string
+          format: date-time
+        estado:
+          type: string
+          enum: [pendiente, aceptada, rechazada]
