@@ -1,22 +1,22 @@
 openapi: 3.0.3
 info:
-  title: API de Videojuego - Jugadores y Progreso
+  title: API de Facturación con GraphQL Proyecto Integrador DSW
   version: 1.0.0
-  description: API REST para gestionar jugadores, autenticación, progreso y solicitudes de amistad en un videojuego.
+  description: Documentación Swagger de todos los endpoints de la API de Facturación con GraphQL Proyecto Integrador DSW con servicios de notifacion via SMS, Whatsapp y e-mail.
 
 servers:
-  - url: http://localhost:3000/apiV1
+  - url: http://localhost:4000/graphql
     description: Servidor local
-  - url: https://desarrollar-api-documentada.onrender.com/apiV1
-    description: Servidor principal
+  - url: https://proyectointegrador-dsw.onrender.com/playground
+    description: Servidor principal de GraphQL
 
 tags:
-  - name: Users
-    description: Operaciones sobre usuarios
-  - name: Progress
-    description: Progreso y niveles de usuario
-  - name: Friend Requests
-    description: Solicitudes de amistad
+  - name: Clients
+    description: Operaciones sobre clientes
+  - name: Products
+    description: Operaciones sobre los productos
+  - name: Invoice
+    description: Operaciones sobre la factura
 
 paths:
   /usuarios/register:
